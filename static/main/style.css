@@ -1,0 +1,380 @@
+/* Основные стили */
+body {
+    margin: 0;
+    font-family: 'Arial', sans-serif;
+    background: url('image/yadro_fone.png') no-repeat center center fixed;
+    background-size: cover;
+    color: #fff;
+    min-height: 100vh;
+}
+.app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Шапка */
+.main-header {
+    background: #212121;
+    padding: 1rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.header-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    padding: 0 1rem;
+}
+
+.logo {
+    height: 40px;
+}
+
+.search-bar {
+    flex-grow: 1;
+    display: flex;
+}
+
+.search-bar input {
+    flex-grow: 1;
+    padding: 0.8rem;
+    border: none;
+    border-radius: 20px 0 0 20px;
+    background: #121212;
+    color: #fff;
+}
+
+.search-bar button {
+    background: #303030;
+    border: none;
+    padding: 0 1.5rem;
+    border-radius: 0 20px 20px 0;
+    color: #fff;
+    cursor: pointer;
+}
+
+.main-nav {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.main-nav a {
+    color: #fff;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Основной контент */
+.content {
+    flex-grow: 1;
+    padding: 2rem;
+}
+
+.video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.video-card {
+    background: #212121;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.3s;
+}
+
+.video-card:hover {
+    transform: translateY(-5px);
+}
+
+.thumbnail {
+    position: relative;
+    aspect-ratio: 16/9;
+}
+
+.thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.duration {
+    position: absolute;
+    bottom: 0.5rem;
+    right: 0.5rem;
+    background: rgba(0,0,0,0.8);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.video-info {
+    padding: 1rem;
+}
+
+.video-info h3 {
+    margin: 0.5rem 0;
+    font-size: 1.1rem;
+}
+
+.channel-info {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin: 0.8rem 0;
+}
+
+.channel-info img {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+}
+
+.video-stats {
+    color: #aaa;
+    font-size: 0.9rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Футер */
+.main-footer {
+    background: #212121;
+    padding: 2rem 0;
+    margin-top: auto;
+}
+
+.footer-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 2rem;
+}
+
+.social-links {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.social-links a {
+    color: #fff;
+    font-size: 1.5rem;
+}
+
+/* Состояния */
+.loader, .error {
+    text-align: center;
+    padding: 2rem;
+    font-size: 1.2rem;
+}
+
+.error {
+    color: #ff4444;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .header-container {
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    .search-bar {
+        order: 3;
+        width: 100%;
+    }
+    
+    .video-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .video-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Добавляем стили для кнопки */
+.profile-link {
+    color: #fff;
+    text-decoration: none;
+    padding: 8px 15px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.profile-link:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 768px) {
+    .main-nav {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .profile-link {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+    }
+}
+/* Стили для всех кнопок навигации */
+.nav-button {
+    color: #fff;
+    text-decoration: none;
+    padding: 8px 15px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 5px;
+}
+
+.nav-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+/* Мобильная адаптация */
+@media (max-width: 767px) {
+    /* Шапка */
+    .header-container {
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 0 12px;
+    }
+
+    .logo {
+        height: 35px;
+        order: 1;
+    }
+
+    .search-bar {
+        order: 3;
+        width: 100%;
+        margin-top: 8px;
+    }
+
+    .main-nav {
+        order: 2;
+        width: auto;
+        gap: 8px;
+    }
+
+    .nav-button {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+
+    .nav-button i {
+        margin-right: 4px;
+    }
+
+    /* Контент */
+    .content {
+        padding: 1rem 12px;
+    }
+
+    .video-grid {
+        grid-template-columns: 1fr;
+        gap: 1.2rem;
+    }
+
+    .video-card {
+        border-radius: 8px;
+    }
+
+    .video-info {
+        padding: 1rem;
+    }
+
+    /* Футер */
+    .main-footer {
+        padding: 1.5rem 0;
+    }
+
+    .footer-container {
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 0 12px;
+        text-align: center;
+    }
+
+    .footer-section {
+        width: 100%;
+        max-width: none;
+    }
+
+    .footer-section h4 {
+        font-size: 16px;
+        margin-bottom: 0.8rem;
+    }
+
+    .footer-section p,
+    .footer-section a {
+        font-size: 14px;
+        margin: 0.3rem 0;
+    }
+
+    .social-links {
+        justify-content: center;
+        margin-top: 1rem;
+    }
+}
+
+
+@media (max-width: 1024px) {
+    /* Для планшетов и мобильных */
+    .header-container {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .logo {
+        text-align: center;
+        order: 1;
+        margin-bottom: 15px;
+    }
+
+    .search-bar {
+        order: 2;
+        width: 100%;
+        max-width: 500px;
+        margin: 0 auto 15px;
+    }
+
+    .main-nav {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Дополнительные правки для маленьких экранов */
+    .logo {
+        margin-bottom: 10px;
+    }
+    
+    .search-bar {
+        margin-bottom: 10px;
+    }
+}

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация</title>
+    <link rel="stylesheet" href="../static/style.css">
+</head>
+<body>
+    <div class="page-wrapper">
+        <div class="page-container">
+            <div class="logo">
+                <img src="../static/image/logo.png" alt="Логотип" class="logo-image">
+            </div>
+            
+            <div class="auth-container">
+                <nav class="auth-nav">
+                    <a href="/register" class="active">Регистрация</a>
+                    <a href="/login">Авторизация</a>
+                </nav>
+
+                <form id="registerForm" class="form-container" class="mt-3">
+                    <h2 class="form-title">Регистрация</h2>
+                    
+                    <div class="form-group">
+                        <label for="username" class="form-label">Имя пользователя</label>
+                        <input type="text" class="form-control" id="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password" class="form-label">Введите пароль</label>
+                        <input type="password" class="form-control" id="password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm_password" class="form-label">Повторите пароль</label>
+                        <input type="password" class="form-control" id="confirm_password" required>
+                    </div>
+                    
+                    <button type="submit" class="submit-btn">Зарегистрироваться</button>
+                    
+                    <p class="form-note text-center">* поле, обязательное для заполнения</p>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    document.querySelectorAll('.code-inputs input').forEach((input, index, inputs) => {
+        input.addEventListener('input', function(e) {
+            if(this.value.length === 1) {
+                if(index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                } else {
+                    this.blur();
+                }
+            }
+        });
+        
+        input.addEventListener('keydown', function(e) {
+            if(e.key === 'Backspace' && this.value === '' && index > 0) {
+                inputs[index - 1].focus();
+            }
+        });
+    });
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+
+            if (password !== confirmPassword) {
+                alert("Пароли не совпадают");
+                return;
+            }
+
+            try {
+                const response = await fetch('/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        email: email,
+                        password: password
+                    })
+                });
+
+                if (response.ok) {
+                    alert('Регистрация прошла успешно! Пожалуйста, войдите.');
+                    window.location.href = '/login';
+                } else {
+                    const error = await response.json();
+                    alert(error.detail || 'Ошибка регистрации');
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Произошла ошибка при регистрации');
+            }
+        });
+    </script>
+</html>

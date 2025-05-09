@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль - Video Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --hover-color: #4f46e5;
+            --background-color: #f8fafc;
+            --card-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            --nav-btn-bg: rgba(255,255,255,0.6);
+            --nav-btn-hover-bg: rgba(255,255,255,0.9);
+        }
+
+        body {
+            background: linear-gradient(rgba(30, 60, 114, 0.7),
+            rgba(30, 60, 114, 0.7)),
+            url('/static/image/yadro_fone.png') no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+            position: relative;
+            color: #333;
+        }
+
+        /* Навигационная панель */
+        .navbar {
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(10px);
+        }
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+        }
+        .navbar-brand img.logo {
+            height: 30px;
+            margin-right: .5rem;
+        }
+        .nav-links .nav-link {
+            color: var(--primary-color);
+            background: var(--nav-btn-bg);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: background 0.3s ease, transform 0.3s ease;
+            margin: 0 0.25rem;
+        }
+
+        .nav-links .nav-link:hover {
+            color: var(--hover-color);
+            background: var(--nav-btn-hover-bg);
+            transform: translateY(-2px);
+        }
+
+        /* Плавающая кнопка */
+        .add-video-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            background: var(--primary-color);
+            color: white;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            z-index: 1000;
+        }
+
+        .add-video-btn:hover {
+            background: var(--hover-color);
+            transform: translateY(-3px);
+        }
+
+        /* Карточка профиля */
+        .profile-card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s ease;
+            background: linear-gradient(145deg, #ffffff, var(--background-color));
+        }
+
+        .avatar-wrapper {
+            position: relative;
+            width: 150px;
+            margin: -75px auto 20px;
+        }
+
+        .avatar {
+            width: 150px;
+            height: 150px;
+            border: 4px solid white;
+            box-shadow: var(--card-shadow);
+            object-fit: cover;
+        }
+
+        .info-item:hover {
+            background: #f1f5f9;
+        }
+
+        /* Стили для превью аватара */
+        .avatar-preview {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 15px;
+            border: 3px solid #ddd;
+        }
+
+        /* Стили для модального окна */
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        @media (max-width: 768px) {
+            .add-video-btn {
+                bottom: 1rem;
+                right: 1rem;
+                padding: 0.8rem 1.5rem;
+            }
+
+            .navbar-brand {
+                font-size: 1rem;
+            }
+
+            .nav-links {
+                gap: 1rem;
+            }
+        }
+        /* Стили для модального окна смены пароля */
+            .password-strength {
+                height: 5px;
+                margin-top: 5px;
+                background: #eee;
+                border-radius: 3px;
+                overflow: hidden;
+            }
+
+            .password-strength-bar {
+                height: 100%;
+                width: 0;
+                transition: width 0.3s ease;
+            }
+
+            /* Цвета для индикатора сложности пароля */
+            .password-weak {
+                background-color: #ff4d4d;
+                width: 33%;
+            }
+
+            .password-medium {
+                background-color: #ffcc00;
+                width: 66%;
+            }
+
+            .password-strong {
+                background-color: #00cc66;
+                width: 100%;
+            }
+            /* Стили для кнопок показа/скрытия пароля */
+            .toggle-password {
+                border-top-left-radius: 0;
+                border-bottom-left-radius: 0;
+                border-left: none;
+            }
+
+            .toggle-password:hover {
+                background-color: #e9ecef;
+            }
+
+            .input-group .form-control:not(:first-child) {
+                border-top-right-radius: 0;
+                border-bottom-right-radius: 0;
+            }
+            .form-check-input {
+                margin-top: 0.2em;
+            }
+
+            .form-check-label {
+                margin-left: 0.5em;
+                user-select: none;
+            }
+
+            #profilePicture:disabled {
+                background-color: #e9ecef;
+                opacity: 0.7;
+                cursor: not-allowed;
+            }
+    </style>
+</head>
+<body>
+    <!-- Навигация -->
+    <nav class="navbar navbar-expand-lg navbar-light shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" href="/">
+                <img src="/static/image/logo.png" alt="Logo" class="logo">
+            </a>
+
+            <!-- Кнопки навигации -->
+            <div class="nav-links d-flex gap-4 me-auto ms-4">
+                <a href="/" class="nav-link">Главная</a>
+                <a href="#" class="nav-link">Популярное</a>
+            </div>
+
+            <div class="d-flex align-items-center gap-3">
+                <span class="me-3 text-muted d-none d-md-block">{{ user.username }}</span>
+                <form action="/auth/logout" method="post">
+                    <button type="submit" class="btn btn-primary logout-btn">
+                        <i class="fas fa-sign-out-alt me-2"></i>Выйти
+                    </button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Основной контент -->
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="profile-card p-4 mt-4">
+                    <!-- Аватар -->
+                    <div class="avatar-wrapper">
+                        <img src="{{ '/static/profiles_pictures/' + user.profile_picture if user.profile_picture else '/static/image/default-avatar.jpg' }}"
+                             class="avatar rounded-circle"
+                             alt="Аватар"
+                             onerror="this.src='/static/image/default-avatar.jpg'">
+                    </div>
+
+                    <!-- Информация -->
+                    <div class="text-center mb-4">
+                        <h2 class="mb-3 fw-bold">{{ user.username }}</h2>
+                        <div class="stats-badge d-inline-block">
+                            <i class="fas fa-user-clock me-2"></i>
+                            Участник с {{ user.created_at.strftime('%d.%m.%Y') }}
+                        </div>
+                    </div>
+
+                    <!-- Дополнительные действия -->
+                    <div class="d-grid gap-3">
+                        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                            <i class="fas fa-edit me-2"></i>Редактировать профиль
+                        </button>
+                        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                            <i class="fas fa-lock me-2"></i>Сменить пароль
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно редактирования профиля -->
+    <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editProfileModalLabel">Редактирование профиля</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="editProfileForm" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <!-- Превью аватара -->
+                        <div class="text-center">
+                            <img id="avatarPreview" 
+                                 src="{{ '/static/profiles_pictures/' + user.profile_picture if user.profile_picture else '/static/image/default-avatar.jpg' }}" 
+                                 class="avatar-preview"
+                                 alt="Превью аватара">
+                        </div>
+                        
+                        <!-- Поле для загрузки аватара -->
+                        <div class="mb-3">
+                            <label for="profilePicture" class="form-label">Новый аватар</label>
+                            <input class="form-control" type="file" id="profilePicture" name="profile_picture" accept="image/*">
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="keepCurrentAvatar" name="keep_current_avatar">
+                            <label class="form-check-label" for="keepCurrentAvatar">Оставить текущий аватар</label>
+                        </div>
+                        <!-- Поле для имени пользователя -->
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Имя пользователя</label>
+                            <input type="text" class="form-control" id="username" name="username" value="{{ user.username }}" required>
+                            <div id="usernameError" class="invalid-feedback"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно смены пароля -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="changePasswordModalLabel">Смена пароля</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="changePasswordForm">
+                <div class="modal-body">
+                    <!-- Текущий пароль -->
+                    <div class="mb-3">
+                        <label for="currentPassword" class="form-label">Текущий пароль</label>
+                        <input type="password" class="form-control" id="currentPassword" name="current_password" required>
+                    </div>
+                    
+                    <!-- Новый пароль -->
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label">Новый пароль</label>
+                        <input type="password" class="form-control" id="newPassword" name="new_password" required>
+                        <div class="form-text">Минимум 8 символов</div>
+                    </div>
+                    
+                    <!-- Подтверждение пароля -->
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">Подтвердите новый пароль</label>
+                        <input type="password" class="form-control" id="confirmPassword" name="confirm_password" required>
+                        <div id="passwordError" class="invalid-feedback"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Изменить пароль</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+    <!-- Кнопка добавления видео -->
+    <button class="add-video-btn">
+        <i class="fas fa-plus-circle"></i>
+        <span class="d-none d-sm-inline">Добавить видео</span>
+    </button>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Обработка превью аватара
+        document.getElementById('profilePicture').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    document.getElementById('avatarPreview').src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Проверка имени пользователя на сервере
+        document.getElementById('username').addEventListener('blur', function() {
+            const username = this.value.trim();
+            const errorElement = document.getElementById('usernameError');
+            
+            if (username === '{{ user.username }}') {
+                return; // Имя не изменилось
+            }
+            
+            if (username.length < 3) {
+                this.classList.add('is-invalid');
+                errorElement.textContent = 'Имя должно содержать минимум 3 символа';
+                return;
+            }
+            
+            fetch('/api/check-username?username=' + encodeURIComponent(username))
+                .then(response => response.json())
+                .then(data => {
+                    if (data.exists) {
+                        this.classList.add('is-invalid');
+                        errorElement.textContent = 'Это имя уже занято';
+                    } else {
+                        this.classList.remove('is-invalid');
+                        errorElement.textContent = '';
+                    }
+                });
+        });
+
+        // Отправка формы
+        document.getElementById('editProfileForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+                
+            const formData = new FormData(this);
+            const usernameInput = document.getElementById('username');
+            const keepAvatar = document.getElementById('keepCurrentAvatar').checked;
+                
+            // Если выбрано оставить текущий аватар, удаляем файл из формы
+            if (keepAvatar) {
+                formData.delete('profile_picture');
+            }
+            
+            if (usernameInput.classList.contains('is-invalid')) {
+                return;
+            }
+            
+            fetch('/api/update-profile', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+        // Валидация пароля
+document.getElementById('newPassword').addEventListener('input', validatePassword);
+document.getElementById('confirmPassword').addEventListener('input', validatePassword);
+
+function validatePassword() {
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    const errorElement = document.getElementById('passwordError');
+    
+    // Проверка длины пароля (независимо от того, видимый он или нет)
+    if (newPassword.length > 0 && newPassword.length < 8) {
+        errorElement.textContent = 'Пароль должен содержать минимум 8 символов';
+        return false;
+    }
+    
+    // Проверка совпадения паролей
+    if (newPassword !== confirmPassword) {
+        errorElement.textContent = 'Пароли не совпадают';
+        return false;
+    }
+    
+    errorElement.textContent = '';
+    return true;
+}
+
+// Отправка формы смены пароля
+document.getElementById('changePasswordForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (!validatePassword()) {
+        return;
+    }
+    
+    const formData = {
+        current_password: document.getElementById('currentPassword').value,
+        new_password: document.getElementById('newPassword').value,
+        confirm_password: document.getElementById('confirmPassword').value
+    };
+    
+    fetch('/api/change-password', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => { throw err; });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            alert('Пароль успешно изменён!');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('changePasswordModal'));
+            modal.hide();
+            // Очищаем форму
+            document.getElementById('changePasswordForm').reset();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('passwordError').textContent = error.detail || 'Ошибка при изменении пароля';
+    });
+    });
+    // Функция для переключения видимости пароля
+    function setupPasswordToggles() {
+        document.querySelectorAll('.toggle-password').forEach(button => {
+            button.addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                const input = this.parentElement.querySelector('input');
+                
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.replace('fa-eye', 'fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.replace('fa-eye-slash', 'fa-eye');
+                }
+            });
+        });
+    }
+
+    // Вызовите функцию после загрузки страницы и после открытия модального окна
+    document.addEventListener('DOMContentLoaded', setupPasswordToggles);
+
+    // Для Bootstrap 5 модального окна
+    document.getElementById('changePasswordModal').addEventListener('shown.bs.modal', setupPasswordToggles);
+    </script>
+</body>
+</html>
