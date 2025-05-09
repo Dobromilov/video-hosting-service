@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VideoHost</title>
+    
+    <!-- Подключение Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- React и Babel -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    
+    <!-- Подключение стилей -->
+    <link rel="stylesheet" href="../static/main/style.css">
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        class VideoHost extends React.Component {
+            state = {
+                videos: [],
+                loading: true,
+                error: null
+            }
+
+            componentDidMount() {
+                this.fetchVideos();
+            }
+
+            fetchVideos = async () => {
+                try {
+                    // Тестовые данные (замените на реальный API)
+                    const mockVideos = [{
+                        id: 1,
+                        title: "Пример видео",
+                        thumbnail: "../static/main/image/fone.png",
+                        duration: "8:15",
+                        views: "125K",
+                        date: "3 дня назад",
+                        channel: {
+                            name: "Тестовый канал",
+                            avatar: "../static/main/image/fone.png"
+                        }
+                    }];
+                    
+                    this.setState({ videos: mockVideos, loading: false });
+                } catch (error) {
+                    this.setState({ error: "Ошибка загрузки данных", loading: false });
+                }
+            }
+
+            renderVideoCard = (video) => (
+                <div className="video-card" key={video.id}>
+                    <div className="thumbnail">
+                        <img src={video.thumbnail} alt="Превью" />
+                        <span className="duration">{video.duration}</span>
+                    </div>
+                    <div className="video-info">
+                        <h3>{video.title}</h3>
+                        <div className="channel-info">
+                            <img src={video.channel.avatar} alt="Аватар" />
+                            <span>{video.channel.name}</span>
+                        </div>
+                        <div className="video-stats">
+                            <span>{video.views} просмотров</span>
+                            <span>•</span>
+                            <span>{video.date}</span>
+                        </div>
+                    </div>
+                </div>
+            )
+
+            render() {
+                const { videos, loading, error } = this.state;
+                
+                return (
+                    <div className="app">
+                        <header className="main-header">
+                            <div className="header-container">
+                                <img src="../static/main/image/logo.png" className="logo" alt="Логотип" />
+                                <div className="search-bar">
+                                    <input type="text" placeholder="Поиск видео..." />
+                                    <button><i className="fas fa-search"></i></button>
+                                </div>
+                                <nav className="main-nav">
+                                    <a href="#" className="nav-button">
+                                        <i className="fas fa-home"></i> Главная
+                                    </a>
+                                    
+                                    <a href="/profile" className="nav-button">
+                                        <i className="fas fa-user"></i> Личный кабинет
+                                    </a>
+                                </nav>
+                            </div>
+                        </header>
+
+                        <main className="content">
+                            {loading ? (
+                                <div className="loader">Загрузка...</div>
+                            ) : error ? (
+                                <div className="error">{error}</div>
+                            ) : (
+                                <div className="video-grid">
+                                    {videos.map(this.renderVideoCard)}
+                                </div>
+                            )}
+                        </main>
+
+                        <footer className="main-footer">
+                            <div className="footer-container">
+                                <div className="footer-section">
+                                    <h4>Контакты</h4>
+                                    <p>Email: support@videohost.ru</p>
+                                    <p>Телефон: +7 (495) 123-45-67</p>
+                                    <p>Адрес: Москва, ул. Пушкина, д. 15</p>
+                                </div>
+                                <div className="social-links">
+                                    <a href="#"><i className="fab fa-vk"></i></a>
+                                    <a href="#"><i className="fab fa-youtube"></i></a>
+                                </div>
+                            </div>
+                        </footer>
+                    </div>
+                );
+            }
+        }
+
+        ReactDOM.render(<VideoHost />, document.getElementById('root'));
+    </script>
+</body>
+</html>

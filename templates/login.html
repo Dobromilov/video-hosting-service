@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Авторизация</title>
+    <link rel="stylesheet" href="../static/style.css">
+</head>
+<body>
+    <div class="page-wrapper">
+        <div class="page-container">
+            <div class="logo">
+                <img src="../static/image/logo.png" alt="logo" width="80" height="50">
+            </div>
+            
+            <div class="auth-container">
+                <nav class="auth-nav">
+                    <a href="/register">Регистрация</a>
+                    <a href="/login" class="active">Авторизация</a>
+                </nav>
+
+                <form id="loginForm" class="form-container">
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="text" class="form-control" id="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Пароль</label>
+                        <input type="password" class="form-control" id="password" required>
+                    </div>
+                    <button type="submit" class="submit-btn">Войти</button>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    document.querySelectorAll('.code-inputs input').forEach((input, index, inputs) => {
+        input.addEventListener('input', function(e) {
+            if(this.value.length === 1) {
+                if(index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                } else {
+                    this.blur();
+                }
+            }
+        });
+        
+        input.addEventListener('keydown', function(e) {
+            if(e.key === 'Backspace' && this.value === '' && index > 0) {
+                inputs[index - 1].focus();
+            }
+        });
+    });
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const response = await fetch('/auth/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    username: document.getElementById('username').value,
+                    password: document.getElementById('password').value
+                })
+            });
+
+            if (response.ok) {
+                window.location.href = '/';
+            } else {
+                alert('Ошибка входа');
+            }
+        });
+
+    </script>
+</html>
