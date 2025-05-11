@@ -169,4 +169,48 @@ async def change_password(
             detail=f"Ошибка при обновлении пароля: {str(e)}"
         )
 
+@router.post("/upload-video")
+async def upload_video(
+    title: str = Form(...),
+    description: str = Form(None),
+    video_file: UploadFile = File(...),
+    thumbnail: UploadFile = File(None),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    try:
+        # Создание папок
+        os.makedirs("static/videos", exist_ok=True)
+        os.makedirs("static/thumbnails", exist_ok=True)
 
+        # Сохранение видео
+        video_filename = f"video_{user.id}_{int(time.time())}.mp4"
+        video_path = f"static/videos/{video_filename}"
+        with open(video_path, "wb") as buffer:
+            shutil.copyfileobj(video_file.file, buffer)
+
+        # Сохранение обложки
+        thumbnail_filename = "default-thumbnail.jpg"
+        if thumbnail and thumbnail.content_type.startswith('image/'):
+            thumbnail_filename = f"thumb_{user.id}_{int(time.time())}.jpg"
+            thumbnail_path = f"static/thumbnails/{thumbnail_filename}"
+            with open(thumbnail_path, "wb") as buffer:
+                shutil.copyfileobj(thumbnail.file, buffer)
+
+        # Создание записи в БД
+        new_video = models.Video(
+            title=title,
+            description=description,
+            filepath=video_filename,
+            thumbnail=thumbnail_filename,
+            user_id=user.id,
+            created_at=datetime.now()
+        )
+        db.add(new_video)
+        db.commit()
+
+        return {"status": "success"}
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))

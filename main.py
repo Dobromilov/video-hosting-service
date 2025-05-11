@@ -74,4 +74,4 @@ async def profile_page(request: Request, user: user_dependency):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8080)
+    uvicorn.run(app, host="127.0.0.255", port=8080)

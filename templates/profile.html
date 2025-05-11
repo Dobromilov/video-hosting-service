@@ -17,8 +17,7 @@
         }
 
         body {
-            background: linear-gradient(rgba(30, 60, 114, 0.7),
-            rgba(30, 60, 114, 0.7)),
+            background:
             url('/static/image/yadro_fone.png') no-repeat center center fixed;
             background-size: cover;
             min-height: 100vh;
@@ -26,33 +25,213 @@
             color: #333;
         }
 
-        /* Навигационная панель */
-        .navbar {
-            background: rgba(255,255,255,0.8);
-            backdrop-filter: blur(10px);
-        }
-        .navbar-brand {
-            display: flex;
-            align-items: center;
-        }
-        .navbar-brand img.logo {
-            height: 30px;
-            margin-right: .5rem;
-        }
-        .nav-links .nav-link {
-            color: var(--primary-color);
-            background: var(--nav-btn-bg);
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            transition: background 0.3s ease, transform 0.3s ease;
-            margin: 0 0.25rem;
-        }
+/* === Основные стили === */
+.main-header {
+    background: #212121;
+    padding: 0.8rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
 
-        .nav-links .nav-link:hover {
-            color: var(--hover-color);
-            background: var(--nav-btn-hover-bg);
-            transform: translateY(-2px);
-        }
+.header-container {
+    max-width: 1600px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    padding: 0 2rem;
+}
+
+/* Логотип */
+.logo {
+    height: 42px;
+    transition: transform 0.3s ease;
+}
+.logo:hover {
+    transform: scale(1.05);
+}
+
+/* Поисковая строка */
+.search-bar {
+    flex: 1;
+    max-width: 720px;
+    min-width: 200px;
+    position: relative;
+}
+.search-input {
+    width: 100%;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 28px;
+    background: #121212;
+    color: #fff;
+    font-size: 1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.search-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #3b82f6;
+}
+.search-btn {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    padding: 0.5rem;
+    transition: color 0.3s ease;
+}
+.search-btn:hover {
+    color: #3b82f6;
+}
+
+/* Навигационные кнопки */
+.main-nav {
+    display: flex;
+    gap: 1.2rem;
+    margin-left: auto;
+}
+.nav-button {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 1.4rem;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.nav-button i {
+    font-size: 1.1rem;
+}
+.nav-button:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Кнопка выхода */
+.logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 1.4rem;
+    border-radius: 24px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.logout-btn:hover {
+    background: #bb2d3b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Разделитель */
+.vr {
+    height: 32px;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.2);
+    margin: 0 1rem;
+}
+
+/* === Адаптивность === */
+@media (max-width: 1200px) {
+    .header-container {
+        padding: 0 1.5rem;
+        gap: 1.5rem;
+    }
+    .nav-button {
+        padding: 0.5rem 1.2rem;
+    }
+}
+
+@media (max-width: 992px) {
+    .header-container {
+        flex-wrap: wrap;
+        padding: 0.8rem 1.5rem;
+        gap: 1rem;
+    }
+    .search-bar {
+        order: 3;
+        width: 100%;
+        max-width: none;
+        margin: 0.5rem 0;
+    }
+    .main-nav {
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .nav-text {
+        display: none;
+    }
+    .nav-button {
+        padding: 0.6rem;
+        border-radius: 50%;
+    }
+    .nav-button i {
+        margin: 0;
+    }
+    .logout-btn span {
+        display: none;
+    }
+    .vr {
+        display: none;
+    }
+    .logo {
+        height: 38px;
+    }
+}
+
+@media (max-width: 576px) {
+    .header-container {
+        padding: 0.5rem 1rem;
+    }
+    .search-input {
+        padding: 0.6rem 1.2rem;
+    }
+    .nav-button {
+        padding: 0.5rem;
+    }
+    .logout-btn {
+        padding: 0.6rem;
+    }
+}
+
+.header-container {
+    justify-content: space-between; /* Равномерное распределение */
+    padding: 0 2rem !important;
+}
+
+.search-bar {
+    margin: 0 auto; /* Центрирование поиска */
+}
+
+@media (max-width: 1200px) {
+    .header-container {
+        padding: 0 1.5rem !important;
+    }
+}
+
+@media (max-width: 992px) {
+    .search-bar {
+        margin: 0.5rem auto; /* Центрирование на мобилках */
+    }
+
+    .header-container {
+        justify-content: center;
+    }
+}
 
         /* Плавающая кнопка */
         .add-video-btn {
@@ -194,34 +373,103 @@
                 opacity: 0.7;
                 cursor: not-allowed;
             }
+        /* Стили для видео */
+.user-videos {
+    background: rgba(255,255,255,0.9);
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.video-card {
+    transition: transform 0.3s ease;
+    border: none;
+    background: #f8f9fa;
+}
+
+.video-card:hover {
+    transform: translateY(-5px);
+}
+
+.video-player {
+    border-radius: 10px;
+    overflow: hidden;
+    background: #000;
+}
+
+video {
+    max-height: 300px;
+}
+
+        #thumbnailPreview {
+    transition: transform 0.3s ease;
+    border: 2px dashed #ddd;
+}
+
+#thumbnailPreview:hover {
+    transform: scale(1.02);
+    border-color: var(--primary-color);
+}
+
+.modal-content {
+    border-radius: 15px;
+}
+
+.progress-bar {
+    background-color: var(--primary-color);
+    height: 100%;
+    border-radius: 3px;
+}
+
+.upload-progress {
+    height: 4px;
+    background: #f0f0f0;
+    margin-top: 10px;
+    overflow: hidden;
+    border-radius: 3px;
+}
     </style>
 </head>
 <body>
-    <!-- Навигация -->
-    <nav class="navbar navbar-expand-lg navbar-light shadow-sm">
-        <div class="container">
-            <a class="navbar-brand fw-bold text-primary" href="/">
-                <img src="/static/image/logo.png" alt="Logo" class="logo">
+<!-- Навигация -->
+<nav class="main-header navbar navbar-expand-lg">
+    <div class="container-fluid p-0">
+        <div class="header-container w-100 mx-auto"> <!-- Добавлен mx-auto -->
+            <!-- Логотип -->
+            <a class="navbar-brand me-4" href="/">
+                <img src="/static/image/logo.png" class="logo" alt="Логотип">
             </a>
 
-            <!-- Кнопки навигации -->
-            <div class="nav-links d-flex gap-4 me-auto ms-4">
-                <a href="/" class="nav-link">Главная</a>
-                <a href="#" class="nav-link">Популярное</a>
+            <!-- Поисковая строка -->
+            <div class="search-bar flex-grow-1 mx-4" style="max-width: 800px;"> <!-- Ограничение ширины -->
+                <input type="text" placeholder="Поиск видео..." class="search-input w-100">
+                <button class="search-btn">
+                    <i class="fas fa-search"></i>
+                </button>
             </div>
 
-            <div class="d-flex align-items-center gap-3">
-                <span class="me-3 text-muted d-none d-md-block">{{ user.username }}</span>
-                <form action="/auth/logout" method="post">
-                    <button type="submit" class="btn btn-primary logout-btn">
-                        <i class="fas fa-sign-out-alt me-2"></i>Выйти
+            <!-- Правая часть -->
+            <div class="d-flex align-items-center gap-3 ms-auto"> <!-- Добавлен ms-auto -->
+                <!-- Навигационные кнопки -->
+                <div class="main-nav d-flex gap-3">
+                    <a href="/" class="nav-button">
+                        <i class="fas fa-home"></i>
+                        <span class="nav-text">Главная</span>
+                    </a>
+                </div>
+
+                <!-- Кнопка выхода -->
+                <form action="/auth/logout" method="post" class="ms-2">
+                    <button type="submit" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span class="d-none d-md-inline">Выйти</span>
                     </button>
                 </form>
             </div>
         </div>
-    </nav>
-
-    <!-- Основной контент -->
+    </div>
+</nav>
+<!-- Основной контент -->
     <div class="container py-5">
         <div class="row justify-content-center">
             <div class="col-lg-8">
@@ -252,10 +500,43 @@
                             <i class="fas fa-lock me-2"></i>Сменить пароль
                         </button>
                     </div>
+                    <!-- Секция с видео -->
+                    <div class="user-videos">
+                        <h4 class="mb-4">Мои видео</h4>
+
+                        {% if user_videos %}
+                        <div class="row row-cols-1 row-cols-md-2 g-4">
+                            {% for video in user_videos %}
+                            <div class="col">
+                                <div class="card video-card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">{{ video.title }}</h5>
+                                        <p class="card-text text-muted">
+                                            <small>Загружено {{ video.created_at.strftime('%d.%m.%Y в %H:%M') }}</small>
+                                        </p>
+                                        <div class="video-player">
+                                            <video controls>
+                                                <source src="/static/videos/{{ video.filepath }}" type="video/mp4">
+                                                Ваш браузер не поддерживает видео.
+                                            </video>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info">
+                            У вас пока нет загруженных видео
+                        </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+
+
 
     <!-- Модальное окно редактирования профиля -->
     <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
@@ -341,10 +622,73 @@
 </div>
 
     <!-- Кнопка добавления видео -->
-    <button class="add-video-btn">
+    <button class="add-video-btn" data-bs-toggle="modal" data-bs-target="#uploadVideoModal">
         <i class="fas fa-plus-circle"></i>
         <span class="d-none d-sm-inline">Добавить видео</span>
     </button>
+
+
+<!-- Модальное окно загрузки видео -->
+<div class="modal fade" id="uploadVideoModal" tabindex="-1" aria-labelledby="uploadVideoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadVideoModalLabel">Загрузка нового видео</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="uploadVideoForm" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <!-- Превью обложки -->
+                    <div class="mb-3 text-center">
+                        <img id="thumbnailPreview"
+                             src="/static/image/default-thumbnail.jpg"
+                             class="img-thumbnail rounded"
+                             style="max-width: 400px; cursor: pointer; height: 200px; object-fit: cover;"
+                             onclick="document.getElementById('thumbnail').click()"
+                             alt="Превью обложки">
+                        <div class="form-text mt-2">Нажмите для выбора обложки</div>
+                    </div>
+
+                    <!-- Поля формы -->
+                    <div class="mb-3">
+                        <label for="videoTitle" class="form-label">Название видео</label>
+                        <input type="text" class="form-control" id="videoTitle" name="title" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="videoDescription" class="form-label">Описание</label>
+                        <textarea class="form-control" id="videoDescription" name="description" rows="3"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="videoFile" class="form-label">Видео файл</label>
+                        <input type="file"
+                               class="form-control"
+                               id="videoFile"
+                               name="video_file"
+                               accept="video/mp4"
+                               required>
+                        <div class="form-text">Максимальный размер: 2GB</div>
+                    </div>
+
+                    <!-- Скрытое поле для обложки -->
+                    <input type="file"
+                           id="thumbnail"
+                           name="thumbnail"
+                           accept="image/*"
+                           class="d-none"
+                           onchange="previewThumbnail(event)">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload me-2"></i>Загрузить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -506,6 +850,50 @@ document.getElementById('changePasswordForm').addEventListener('submit', functio
 
     // Для Bootstrap 5 модального окна
     document.getElementById('changePasswordModal').addEventListener('shown.bs.modal', setupPasswordToggles);
+    // Добавить в существующий script
+function previewThumbnail(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('thumbnailPreview').src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+document.getElementById('uploadVideoForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Загрузка...';
+
+    try {
+        const response = await fetch('/api/upload-video', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(await response.text());
+        }
+
+        const result = await response.json();
+
+        // Обновляем страницу для отображения нового видео
+        window.location.reload();
+
+    } catch (error) {
+        console.error('Ошибка:', error);
+        alert('Ошибка загрузки: ' + error.message);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-upload me-2"></i>Загрузить';
+    }
+});
+
     </script>
 </body>
 </html>
