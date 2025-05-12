@@ -62,11 +62,12 @@ async def register_page(request: Request,
     return templates.TemplateResponse("register.html", {"request": request})
 
 @app.get("/profile", response_class=HTMLResponse)
-async def profile_page(request: Request, user: user_dependency):
+async def profile_page(request: Request, user: user_dependency, db: db_dependency):
     if user:
+        videos = await Api.get_user_videos(user.id, db)
         return templates.TemplateResponse(
             "profile.html",
-            {"request": request, "user": user}
+            {"request": request, "user": user, "user_videos": videos}
         )
     else:
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
@@ -74,4 +75,4 @@ async def profile_page(request: Request, user: user_dependency):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.255", port=8080)
+    uvicorn.run(app, host="127.0.0.1", port=8080)

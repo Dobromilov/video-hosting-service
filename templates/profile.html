@@ -437,7 +437,7 @@ video {
         <div class="header-container w-100 mx-auto"> <!-- Добавлен mx-auto -->
             <!-- Логотип -->
             <a class="navbar-brand me-4" href="/">
-                <img src="/static/image/logo.png" class="logo" alt="Логотип">
+                <img src="../static/image/logo.png" class="logo" alt="Логотип">
             </a>
 
             <!-- Поисковая строка -->
@@ -476,7 +476,7 @@ video {
                 <div class="profile-card p-4 mt-4">
                     <!-- Аватар -->
                     <div class="avatar-wrapper">
-                        <img src="{{ '/static/profiles_pictures/' + user.profile_picture if user.profile_picture else '/static/image/default-avatar.jpg' }}"
+                        <img src="{{ '/static/profiles_pictures/' + user.profile_picture if user.profile_picture else '../static/image/default-avatar.jpg' }}"
                              class="avatar rounded-circle"
                              alt="Аватар"
                              onerror="this.src='/static/image/default-avatar.jpg'">

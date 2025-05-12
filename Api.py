@@ -1,10 +1,10 @@
 import shutil
-from typing import Optional
+from typing import Optional, List
 from fastapi import Depends, HTTPException, status, APIRouter, Request, Response, Form, UploadFile, File
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
-from datetime import timedelta
+from datetime import timedelta, datetime
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 import time
@@ -175,7 +175,7 @@ async def upload_video(
     description: str = Form(None),
     video_file: UploadFile = File(...),
     thumbnail: UploadFile = File(None),
-    user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user_optional),
     db: Session = Depends(get_db)
 ):
     try:
@@ -214,3 +214,7 @@ async def upload_video(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+async def get_user_videos(user_id: int, db: Session) -> List[models.Video]:
+    videos = db.query(models.Video).filter(models.Video.user_id == user_id).all()
+    return videos

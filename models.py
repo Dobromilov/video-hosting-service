@@ -38,14 +38,14 @@ class Video(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    author = relationship("User", back_populates="videos")
-
-    comments = relationship("Comment", back_populates="video")
-    likes = relationship("Like", back_populates="video")
 
     __table_args__ = (
         CheckConstraint("privacy IN ('public', 'private')", name='check_privacy'),
     )
+
+    author = relationship("User", back_populates="videos")
+    comments = relationship("Comment", back_populates="video")
+    likes = relationship("Like", back_populates="video")
 
 class Comment(Base):
     __tablename__ = "comments"
@@ -76,6 +76,8 @@ class Like(Base):
         UniqueConstraint('video_id', 'user_id', name='unique_video_like'),  # Один лайк от пользователя на видео
         CheckConstraint("is_like IN (TRUE, FALSE)", name='check_is_like_bool'),
     )
+
+    video = relationship("Video", back_populates="likes")
 
 class Subscription(Base):
     __tablename__ = "subscriptions"
