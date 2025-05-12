@@ -22,6 +22,7 @@ class User(Base):
 
     videos = relationship("Video", back_populates="author")
     comments = relationship("Comment", back_populates="user")
+
 class Video(Base):
     __tablename__ = "videos"
 
