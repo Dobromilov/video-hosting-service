@@ -1,6 +1,6 @@
 import shutil
 from typing import Optional, List
-from fastapi import Depends, HTTPException, status, APIRouter, Request, Response, Form, UploadFile, File
+from fastapi import Depends, HTTPException, status, APIRouter, Request, Response, Form, UploadFile, File, Query
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
@@ -9,6 +9,11 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 import time
 import os
+from fastapi import APIRouter
+from models import Video
+from tortoise.contrib.pydantic import pydantic_model_creator
+from typing import List
+
 
 
 
@@ -233,7 +238,7 @@ async def add_comment(
         raise HTTPException(status_code=401, detail="Требуется авторизация")
 
     new_comment = models.Comment(
-        content=comment_data.content,
+     content=comment_data.content,
         video_id=comment_data.video_id,
         user_id=user.id,
         created_at=datetime.now()
@@ -247,3 +252,17 @@ async def add_comment(
 async def get_user_videos(user_id: int, db: Session) -> List[models.Video]:
     videos = db.query(models.Video).filter(models.Video.user_id == user_id).all()
     return videos
+
+
+# router = APIRouter()
+#
+# VideoResponse = pydantic_model_creator(Video, name="VideoOut", exclude=("author.password",))
+#
+# @router.get("/all-videos", response_model=List[VideoResponse])
+# async def get_all_videos():
+#     """Получение всех видео с информацией об авторе"""
+#     return await VideoResponse.from_queryset(
+#         Video.all()
+#         .prefetch_related("author")
+#         .order_by("-created_at")
+#     )

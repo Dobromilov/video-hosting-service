@@ -850,48 +850,48 @@ document.getElementById('changePasswordForm').addEventListener('submit', functio
     // Для Bootstrap 5 модального окна
     document.getElementById('changePasswordModal').addEventListener('shown.bs.modal', setupPasswordToggles);
     // Добавить в существующий script
-function previewThumbnail(event) {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById('thumbnailPreview').src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
-document.getElementById('uploadVideoForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-
-    const formData = new FormData(this);
-    const submitBtn = this.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Загрузка...';
-
-    try {
-        const response = await fetch('/api/upload-video', {
-            method: 'POST',
-            body: formData
-        });
-
-        if (!response.ok) {
-            throw new Error(await response.text());
+    function previewThumbnail(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('thumbnailPreview').src = e.target.result;
+            };
+            reader.readAsDataURL(file);
         }
-
-        const result = await response.json();
-
-        // Обновляем страницу для отображения нового видео
-        window.location.reload();
-
-    } catch (error) {
-        console.error('Ошибка:', error);
-        alert('Ошибка загрузки: ' + error.message);
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-upload me-2"></i>Загрузить';
     }
-});
+
+    document.getElementById('uploadVideoForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+        const submitBtn = this.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Загрузка...';
+
+        try {
+            const response = await fetch('/api/upload-video', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
+
+            const result = await response.json();
+
+            // Обновляем страницу для отображения нового видео
+            window.location.reload();
+
+        } catch (error) {
+            console.error('Ошибка:', error);
+            alert('Ошибка загрузки: ' + error.message);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-upload me-2"></i>Загрузить';
+        }
+    });
 
     </script>
 </body>

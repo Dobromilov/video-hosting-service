@@ -102,6 +102,5 @@ class CommentLike(Base):
     created_at = Column(TIMESTAMP, server_default=func.now())
 
     __table_args__ = (
-        # Один пользователь — одна реакция на комментарий
         UniqueConstraint('user_id', 'comment_id', name='unique_comment_like'),
     )
