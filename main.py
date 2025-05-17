@@ -72,6 +72,40 @@ async def profile_page(request: Request, user: user_dependency, db: db_dependenc
     else:
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
 
+@app.get("/video/{video_id}", response_class=HTMLResponse)
+async def video_page(
+    request: Request,
+    video_id: int,
+    db: Session = Depends(get_db),
+    user: Optional[models.User] = Depends(Auth.get_current_user_optional)
+):
+    # Получаем видео
+    video = db.query(models.Video).filter(models.Video.id == video_id).first()
+    if not video:
+        raise HTTPException(status_code=404, detail="Видео не найдено")
+
+    # Получаем автора видео отдельным запросом
+    author = db.query(models.User).filter(models.User.id == video.user_id).first()
+
+    # Получаем комментарии отдельным запросом
+    comments = db.query(models.Comment)\
+        .filter(models.Comment.video_id == video_id)\
+        .all()
+
+    # Увеличиваем счетчик просмотров
+    video.views += 1
+    db.commit()
+
+    return templates.TemplateResponse(
+        "video.html",
+        {
+            "request": request,
+            "video": video,
+            "author": author,  # Передаем автора отдельно
+            "comments": comments,  # Передаем комментарии отдельно
+            "user": user
+        }
+    )
 
 if __name__ == "__main__":
     import uvicorn

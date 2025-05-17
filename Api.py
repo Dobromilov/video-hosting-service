@@ -192,8 +192,10 @@ async def upload_video(
         # Сохранение обложки
         thumbnail_filename = "default-thumbnail.jpg"
         if thumbnail and thumbnail.content_type.startswith('image/'):
-            thumbnail_filename = f"thumb_{user.id}_{int(time.time())}.jpg"
-            thumbnail_path = f"static/thumbnails/{thumbnail_filename}"
+            thumbnail_ext = os.path.splitext(thumbnail.filename)[1].lower()
+            thumbnail_filename = f"thumb_{user.id}_{int(time.time())}{thumbnail_ext}"
+            thumbnail_path = os.path.join("static/thumbnails", thumbnail_filename)
+
             with open(thumbnail_path, "wb") as buffer:
                 shutil.copyfileobj(thumbnail.file, buffer)
 
@@ -214,6 +216,33 @@ async def upload_video(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+class CommentCreate(BaseModel):
+    content: str
+    video_id: int
+
+
+@router.post("/add-comment")
+async def add_comment(
+        comment_data: CommentCreate,
+        user: User = Depends(get_current_user_optional),
+        db: Session = Depends(get_db)
+):
+    if not user:
+        raise HTTPException(status_code=401, detail="Требуется авторизация")
+
+    new_comment = models.Comment(
+        content=comment_data.content,
+        video_id=comment_data.video_id,
+        user_id=user.id,
+        created_at=datetime.now()
+    )
+
+    db.add(new_comment)
+    db.commit()
+
+    return {"status": "success"}
 
 async def get_user_videos(user_id: int, db: Session) -> List[models.Video]:
     videos = db.query(models.Video).filter(models.Video.user_id == user_id).all()
