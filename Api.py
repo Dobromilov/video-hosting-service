@@ -1,10 +1,10 @@
 import shutil
-from typing import Optional
+from typing import Optional, List
 from fastapi import Depends, HTTPException, status, APIRouter, Request, Response, Form, UploadFile, File
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
-from datetime import timedelta
+from datetime import timedelta, datetime
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 import time
@@ -169,4 +169,81 @@ async def change_password(
             detail=f"Ошибка при обновлении пароля: {str(e)}"
         )
 
+@router.post("/upload-video")
+async def upload_video(
+    title: str = Form(...),
+    description: str = Form(None),
+    video_file: UploadFile = File(...),
+    thumbnail: UploadFile = File(None),
+    user: User = Depends(get_current_user_optional),
+    db: Session = Depends(get_db)
+):
+    try:
+        # Создание папок
+        os.makedirs("static/videos", exist_ok=True)
+        os.makedirs("static/thumbnails", exist_ok=True)
 
+        # Сохранение видео
+        video_filename = f"video_{user.id}_{int(time.time())}.mp4"
+        video_path = f"static/videos/{video_filename}"
+        with open(video_path, "wb") as buffer:
+            shutil.copyfileobj(video_file.file, buffer)
+
+        # Сохранение обложки
+        thumbnail_filename = "default-thumbnail.jpg"
+        if thumbnail and thumbnail.content_type.startswith('image/'):
+            thumbnail_ext = os.path.splitext(thumbnail.filename)[1].lower()
+            thumbnail_filename = f"thumb_{user.id}_{int(time.time())}{thumbnail_ext}"
+            thumbnail_path = os.path.join("static/thumbnails", thumbnail_filename)
+
+            with open(thumbnail_path, "wb") as buffer:
+                shutil.copyfileobj(thumbnail.file, buffer)
+
+        # Создание записи в БД
+        new_video = models.Video(
+            title=title,
+            description=description,
+            filepath=video_filename,
+            thumbnail=thumbnail_filename,
+            user_id=user.id,
+            created_at=datetime.now()
+        )
+        db.add(new_video)
+        db.commit()
+
+        return {"status": "success"}
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class CommentCreate(BaseModel):
+    content: str
+    video_id: int
+
+
+@router.post("/add-comment")
+async def add_comment(
+        comment_data: CommentCreate,
+        user: User = Depends(get_current_user_optional),
+        db: Session = Depends(get_db)
+):
+    if not user:
+        raise HTTPException(status_code=401, detail="Требуется авторизация")
+
+    new_comment = models.Comment(
+        content=comment_data.content,
+        video_id=comment_data.video_id,
+        user_id=user.id,
+        created_at=datetime.now()
+    )
+
+    db.add(new_comment)
+    db.commit()
+
+    return {"status": "success"}
+
+async def get_user_videos(user_id: int, db: Session) -> List[models.Video]:
+    videos = db.query(models.Video).filter(models.Video.user_id == user_id).all()
+    return videos

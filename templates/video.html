@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ video.title }} - Video Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --hover-color: #4f46e5;
+        }
+
+        body {
+            background: url('/static/image/yadro_fone.png') no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+        }
+
+        /* Навигация */
+        .main-header {
+            background: #212121;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        /* Видеоплеер */
+        .video-player {
+            border-radius: 15px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        /* Комментарии */
+        .comment-avatar {
+            width: 45px;
+            height: 45px;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+    <!-- Навигация -->
+    <nav class="main-header navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <img src="/static/image/logo.png" class="logo" alt="Логотип" height="40">
+            </a>
+            <div class="d-flex gap-3">
+                <a href="/" class="btn btn-outline-light">
+                    <i class="fas fa-home"></i>
+                </a>
+                <form action="/auth/logout" method="post">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Основной контент -->
+    <div class="container mt-4">
+        <div class="row">
+            <!-- Видео и описание -->
+            <div class="col-lg-8">
+                <div class="card mb-4">
+                    <div class="video-player">
+                        <video controls class="w-100">
+                            <source src="/static/videos/{{ video.filepath }}" type="video/mp4">
+                        </video>
+                    </div>
+                    <div class="card-body">
+                        <h1 class="mb-3">{{ video.title }}</h1>
+
+                        <!-- Автор -->
+                        <div class="d-flex align-items-center gap-3 mb-4">
+                            <img src="{{ '/static/profiles_pictures/' + author.profile_picture if author.profile_picture else '/static/image/default-avatar.jpg' }}"
+                                 class="rounded-circle"
+                                 style="width: 50px; height: 50px;">
+                            <div>
+                                <h4>{{ author.username }}</h4>
+                                <small class="text-muted">{{ video.views }} просмотров</small>
+                            </div>
+                        </div>
+
+                        <!-- Описание -->
+                        {% if video.description %}
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <p class="card-text">{{ video.description }}</p>
+                                <small class="text-muted">
+                                    Опубликовано {{ video.created_at.strftime('%d.%m.%Y') }}
+                                </small>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Комментарии -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4">
+                            Комментарии
+                            <span class="badge bg-primary">{{ comments|length }}</span>
+                        </h5>
+
+                        <!-- Форма добавления -->
+                        <form id="commentForm" class="mb-4">
+                            <div class="input-group">
+                                <textarea class="form-control"
+                                          placeholder="Ваш комментарий..."
+                                          rows="2"
+                                          required></textarea>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Список комментариев -->
+                        <div class="comments-list">
+                            {% if comments %}
+                                {% for comment in comments %}
+                                <div class="d-flex gap-3 mb-4">
+                                    <img src="{{ '/static/profiles_pictures/' + comment.user.profile_picture if comment.user.profile_picture else '/static/image/default-avatar.jpg' }}"
+                                         class="comment-avatar rounded-circle">
+                                    <div>
+                                        <h6 class="mb-1">{{ comment.user.username }}</h6>
+                                        <p class="mb-1">{{ comment.content }}</p>
+                                        <small class="text-muted">
+                                            {{ comment.created_at.strftime('%d.%m.%Y %H:%M') }}
+                                        </small>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center text-muted">
+                                    Нет комментариев
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Отправка комментария
+        document.getElementById('commentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const content = e.target.querySelector('textarea').value.trim();
+
+            if (!content) return;
+
+            try {
+                const response = await fetch('/api/add-comment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        content: content,
+                        video_id: {{ video.id }}
+                    })
+                });
+
+                if (response.ok) {
+                    window.location.reload();
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+            }
+        });
+    </script>
+</body>
+</html>
