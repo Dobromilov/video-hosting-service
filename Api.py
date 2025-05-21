@@ -11,7 +11,7 @@ import time
 import os
 from fastapi import APIRouter
 from models import Video
-from tortoise.contrib.pydantic import pydantic_model_creator
+#from tortoise.contrib.pydantic import pydantic_model_creator
 from typing import List
 
 
@@ -226,6 +226,7 @@ async def upload_video(
 class CommentCreate(BaseModel):
     content: str
     video_id: int
+    parent_comment_id: Optional[int] = None
 
 
 @router.post("/add-comment")
@@ -241,7 +242,8 @@ async def add_comment(
      content=comment_data.content,
         video_id=comment_data.video_id,
         user_id=user.id,
-        created_at=datetime.now()
+        created_at=datetime.now(),
+        parent_comment_id=comment_data.parent_comment_id
     )
 
     db.add(new_comment)
@@ -253,16 +255,6 @@ async def get_user_videos(user_id: int, db: Session) -> List[models.Video]:
     videos = db.query(models.Video).filter(models.Video.user_id == user_id).all()
     return videos
 
-
-# router = APIRouter()
-#
-# VideoResponse = pydantic_model_creator(Video, name="VideoOut", exclude=("author.password",))
-#
-# @router.get("/all-videos", response_model=List[VideoResponse])
-# async def get_all_videos():
-#     """Получение всех видео с информацией об авторе"""
-#     return await VideoResponse.from_queryset(
-#         Video.all()
-#         .prefetch_related("author")
-#         .order_by("-created_at")
-#     )
+"""@router.post("toggle-comment-like")
+async def set_comment_like_dislike():
+    return """

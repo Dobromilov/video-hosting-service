@@ -154,6 +154,7 @@ def format_date(value, format_str="%d.%m.%Y"):
 
 templates = Jinja2Templates(directory="templates")
 templates.env.filters["date"] = format_date
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=8080)
