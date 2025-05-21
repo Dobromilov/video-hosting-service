@@ -38,15 +38,23 @@ user_dependency = Annotated[models.User, Depends(get_current_active_user)]
 @app.get("/", response_class=HTMLResponse)
 async def home_page(
     request: Request,
+    db: Session = Depends(get_db),
     user: Optional[models.User] = Depends(Auth.get_current_user_optional)
 ):
     if not user:
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+
+    videos = db.query(models.Video) \
+        .options(joinedload(models.Video.author)) \
+        .order_by(models.Video.created_at.desc()) \
+        .all()
+
     return templates.TemplateResponse(
         "main.html",
         {
             "request": request,
             "user": user,  # Будет None если пользователь не авторизован
+            "videos": videos
         }
     )
 

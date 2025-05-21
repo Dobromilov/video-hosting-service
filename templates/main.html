@@ -205,7 +205,7 @@
 {% block content %}
 <div class="container py-5">
     <div class="user-videos">
-        <h2 class="mb-4">Все видео</h2>
+        <h2 class="mb-4">Все видео:</h2>
             {% if videos %}
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
                 {% for video in videos %}
@@ -219,7 +219,7 @@
                         <div class="card-body">
                             <h5 class="card-title text-truncate">{{ video.title }}</h5>
                             <div class="d-flex align-items-center gap-2 mb-2">
-                                <img src="{{ video.author.profile_picture|default('/static/image/default-avatar.jpg', true) }}"
+                                <img src="/static/profiles_pictures/{{ video.author.profile_picture|default('/static/image/default-avatar.jpg', true) }}"
                                      class="rounded-circle"
                                      style="width: 32px; height: 32px; object-fit: cover;">
                                 <span class="text-muted small">{{ video.author.username }}</span>

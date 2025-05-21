@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from datetime import timedelta, datetime
 from passlib.context import CryptContext
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 import time
 import os
 from fastapi import APIRouter
@@ -401,3 +401,5 @@ async def toggle_video_like(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Database error: {str(e)}"
         )
+
+
