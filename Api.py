@@ -6,10 +6,13 @@ from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from datetime import timedelta, datetime
 from passlib.context import CryptContext
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 import time
 import os
 from fastapi import APIRouter
+from starlette import schemas
+
 from models import Video
 #from tortoise.contrib.pydantic import pydantic_model_creator
 from typing import List
@@ -255,6 +258,146 @@ async def get_user_videos(user_id: int, db: Session) -> List[models.Video]:
     videos = db.query(models.Video).filter(models.Video.user_id == user_id).all()
     return videos
 
-"""@router.post("toggle-comment-like")
-async def set_comment_like_dislike():
-    return """
+
+class CommentLikeDislike(BaseModel):
+    comment_id: int
+    is_like: bool
+
+class CommentReactionResponse(BaseModel):
+    action: str  # created, updated, removed
+    likes: int
+    dislikes: int
+    is_like: Optional[bool]
+
+
+@router.post("/toggle-comment-like")
+async def set_comment_like_dislike(
+        reaction_data: CommentLikeDislike,
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(get_current_user_optional)
+):
+    try:
+        # Проверка существования комментария
+        comment = db.query(models.Comment).get(reaction_data.comment_id)
+        if not comment:
+            raise HTTPException(status_code=404, detail="Comment not found")
+
+        # Поиск существующей реакции
+        existing_reaction = db.query(models.CommentLike).filter(
+            models.CommentLike.user_id == current_user.id,
+            models.CommentLike.comment_id == reaction_data.comment_id
+        ).first()
+
+        action = "removed"
+        if existing_reaction:
+            # Если реакция совпадает - удаляем
+            if existing_reaction.is_like == reaction_data.is_like:
+                db.delete(existing_reaction)
+            else:
+                # Изменяем тип реакции
+                existing_reaction.is_like = reaction_data.is_like
+                action = "updated"
+        else:
+            # Создаем новую реакцию
+            new_reaction = models.CommentLike(
+                user_id=current_user.id,
+                comment_id=reaction_data.comment_id,
+                is_like=reaction_data.is_like
+            )
+            db.add(new_reaction)
+            action = "created"
+
+        db.commit()
+
+        # Получаем актуальные счетчики
+        likes_count = db.query(func.count(models.CommentLike.id)).filter(
+            models.CommentLike.comment_id == reaction_data.comment_id,
+            models.CommentLike.is_like == True
+        ).scalar()
+
+        dislikes_count = db.query(func.count(models.CommentLike.id)).filter(
+            models.CommentLike.comment_id == reaction_data.comment_id,
+            models.CommentLike.is_like == False
+        ).scalar()
+
+        return {
+            "action": action,
+            "likes": likes_count,
+            "dislikes": dislikes_count,
+            "is_like": reaction_data.is_like if action != "removed" else None
+        }
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(e)}"
+        )
+
+class VideoLikeDislike(BaseModel):
+    video_id: int
+    is_like: bool
+
+@router.post("/toggle-video-like")
+async def toggle_video_like(
+    reaction_data: VideoLikeDislike,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user_optional)
+):
+    try:
+        # Проверка существования видео
+        video = db.query(models.Video).get(reaction_data.video_id)
+        if not video:
+            raise HTTPException(status_code=404, detail="Video not found")
+
+        # Поиск существующей реакции
+        existing_reaction = db.query(models.Like).filter(
+            models.Like.user_id == current_user.id,
+            models.Like.video_id == reaction_data.video_id
+        ).first()
+
+        action = "removed"
+        if existing_reaction:
+            # Если реакция совпадает - удаляем
+            if existing_reaction.is_like == reaction_data.is_like:
+                db.delete(existing_reaction)
+            else:
+                # Изменяем тип реакции
+                existing_reaction.is_like = reaction_data.is_like
+                action = "updated"
+        else:
+            # Создаем новую реакцию
+            new_reaction = models.Like(
+                user_id=current_user.id,
+                video_id=reaction_data.video_id,
+                is_like=reaction_data.is_like
+            )
+            db.add(new_reaction)
+            action = "created"
+
+        db.commit()
+
+        # Получаем актуальные счетчики
+        likes_count = db.query(func.count(models.Like.id)).filter(
+            models.Like.video_id == reaction_data.video_id,
+            models.Like.is_like == True
+        ).scalar()
+
+        dislikes_count = db.query(func.count(models.Like.id)).filter(
+            models.Like.video_id == reaction_data.video_id,
+            models.Like.is_like == False
+        ).scalar()
+
+        return {
+            "action": action,
+            "likes": likes_count,
+            "dislikes": dislikes_count,
+            "is_like": reaction_data.is_like if action != "removed" else None
+        }
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(e)}"
+        )

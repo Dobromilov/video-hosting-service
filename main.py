@@ -4,6 +4,8 @@ from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import func
+from sqlalchemy.sql.functions import coalesce
 from starlette import status
 from typing import Annotated, Optional
 from sqlalchemy.orm import Session, joinedload
@@ -81,6 +83,9 @@ async def video_page(
         db: Session = Depends(get_db),
         user: Optional[models.User] = Depends(Auth.get_current_user_optional)
 ):
+    if not user:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+
     # Получаем видео с автором
     video = db.query(models.Video) \
         .options(joinedload(models.Video.author)) \
@@ -90,20 +95,40 @@ async def video_page(
     if not video:
         raise HTTPException(status_code=404, detail="Видео не найдено")
 
+    # Создаем подзапросы для подсчета лайков и дизлайков
+    likes_subquery = (
+        db.query(
+            models.CommentLike.comment_id,
+            func.count(models.CommentLike.id).filter(models.CommentLike.is_like == True).label('likes_count'),
+            func.count(models.CommentLike.id).filter(models.CommentLike.is_like == False).label('dislikes_count')
+        )
+        .group_by(models.CommentLike.comment_id)
+        .subquery()
+    )
+
     # Получаем комментарии с пользователями и реакциями
-    comments_query = db.query(models.Comment) \
-        .options(
-        joinedload(models.Comment.user)
-        #joinedload(models.Comment.likes)
+    comments_query = db.query(
+        models.Comment,
+        coalesce(likes_subquery.c.likes_count, 0).label('likes_count'),
+        coalesce(likes_subquery.c.dislikes_count, 0).label('dislikes_count')
     ) \
+        .outerjoin(likes_subquery, models.Comment.id == likes_subquery.c.comment_id) \
+        .options(joinedload(models.Comment.user)) \
         .filter(models.Comment.video_id == video_id) \
         .order_by(models.Comment.created_at.desc())
 
-    # Получаем все комментарии
+    # Получаем все комментарии с счетчиками
     all_comments = comments_query.all()
 
-    # # Собираем ID комментариев и реакции пользователя
-    comment_ids = [c.id for c in all_comments]
+    # Разделяем результаты запроса
+    comments_with_counts = []
+    for comment, likes, dislikes in all_comments:
+        comment.likes_count = likes or 0
+        comment.dislikes_count = dislikes or 0
+        comments_with_counts.append(comment)
+
+    # Собираем ID комментариев и реакции пользователя
+    comment_ids = [c.id for c in comments_with_counts]
     user_reactions = {}
 
     if user:
@@ -128,7 +153,7 @@ async def video_page(
         return result
 
     # Строим иерархию комментариев
-    comments_tree = build_comment_tree(all_comments)
+    comments_tree = build_comment_tree(comments_with_counts)
 
     # Обновляем счетчик просмотров
     db.query(models.Video) \
