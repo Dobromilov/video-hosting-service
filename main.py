@@ -103,6 +103,20 @@ async def video_page(
     if not video:
         raise HTTPException(status_code=404, detail="Видео не найдено")
 
+    video_likes = db.query(func.count(models.Like.id)) \
+                      .filter(models.Like.video_id == video_id, models.Like.is_like == True) \
+                      .scalar() or 0
+
+    video_dislikes = db.query(func.count(models.Like.id)) \
+                         .filter(models.Like.video_id == video_id, models.Like.is_like == False) \
+                         .scalar() or 0
+
+    user_video_reaction = None
+    reaction = db.query(models.Like) \
+        .filter(models.Like.video_id == video_id, models.Like.user_id == user.id) \
+        .first()
+    user_video_reaction = reaction.is_like if reaction else None
+
     # Создаем подзапросы для подсчета лайков и дизлайков
     likes_subquery = (
         db.query(
@@ -176,7 +190,10 @@ async def video_page(
             "video": video,
             "author": video.author,
             "comments": comments_tree,
-            "user": user
+            "user": user,
+            "video_likes": video_likes,
+            "video_dislikes": video_dislikes,
+            "user_video_reaction": user_video_reaction
         }
     )
 
