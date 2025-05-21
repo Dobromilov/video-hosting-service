@@ -49,6 +49,8 @@ async def home_page(
         .order_by(models.Video.created_at.desc()) \
         .all()
 
+
+
     return templates.TemplateResponse(
         "main.html",
         {

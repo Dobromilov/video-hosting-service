@@ -8,3 +8,4 @@ bcrypt
 authX
 passlib
 jinja2
+tinytag

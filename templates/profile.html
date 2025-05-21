@@ -510,7 +510,7 @@ video {
                                 {% for video in user_videos %}
                                 <div class="col">
                                     <a href="/video/{{ video.id }}" class="card video-card text-decoration-none">
-                                        <img src="/static/thumbnails/{{ video.thumbnail }}"
+                                        <img src="{{ '/static/thumbnails/' + video.thumbnail if video.thumbnail != 'default-thumbnail.jpg' else '/static/image/default-thumbnail.jpg' }}"
                                              class="card-img-top"
                                              alt="Обложка"
                                              style="height: 200px; object-fit: cover;">

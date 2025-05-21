@@ -1,4 +1,6 @@
 import shutil
+from tinytag import TinyTag
+import subprocess
 from typing import Optional, List
 from fastapi import Depends, HTTPException, status, APIRouter, Request, Response, Form, UploadFile, File, Query
 from fastapi.security import OAuth2PasswordRequestForm
@@ -53,7 +55,6 @@ async def check_username(username: str, db: Session = Depends(get_db)):
 
     user = db.query(models.User).filter(models.User.username == username).first()
     return {"exists": user is not None}
-
 
 
 
@@ -191,11 +192,21 @@ async def upload_video(
         os.makedirs("static/videos", exist_ok=True)
         os.makedirs("static/thumbnails", exist_ok=True)
 
+
         # Сохранение видео
         video_filename = f"video_{user.id}_{int(time.time())}.mp4"
         video_path = f"static/videos/{video_filename}"
         with open(video_path, "wb") as buffer:
             shutil.copyfileobj(video_file.file, buffer)
+
+        duration = 0
+        try:
+            tag = TinyTag.get(video_path)
+            duration = int(tag.duration)
+        except Exception as e:
+            print(f"Error getting duration: {str(e)}")
+        finally:
+            video_file.file.seek(0)  # Важно: возвращаем указатель в начало
 
         # Сохранение обложки
         thumbnail_filename = "default-thumbnail.jpg"
@@ -214,7 +225,8 @@ async def upload_video(
             filepath=video_filename,
             thumbnail=thumbnail_filename,
             user_id=user.id,
-            created_at=datetime.now()
+            created_at=datetime.now(),
+            duration=duration
         )
         db.add(new_video)
         db.commit()
