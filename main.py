@@ -1,10 +1,11 @@
+import copy
 from datetime import datetime
 
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import func
+from sqlalchemy import func, case
 from sqlalchemy.sql.functions import coalesce
 from starlette import status
 from typing import Annotated, Optional
@@ -35,6 +36,7 @@ def get_db():
 db_dependency = Annotated[Session, Depends(get_db)]
 user_dependency = Annotated[models.User, Depends(get_current_active_user)]
 
+
 @app.get("/", response_class=HTMLResponse)
 async def home_page(
     request: Request,
@@ -44,19 +46,47 @@ async def home_page(
     if not user:
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
 
-    videos = db.query(models.Video) \
-        .options(joinedload(models.Video.author)) \
-        .order_by(models.Video.created_at.desc()) \
-        .all()
+    # Подзапрос для счетчиков реакций
+    likes_subquery = (
+        db.query(
+            models.Like.video_id,
+            func.sum(case((models.Like.is_like == True, 1), else_=0)).label('likes'),
+            func.sum(case((models.Like.is_like == False, 1), else_=0)).label('dislikes')
+        )
+        .group_by(models.Like.video_id)
+        .subquery()
+    )
 
+    # Основной запрос с явным выбором полей
+    video_query = (
+        db.query(
+            models.Video,
+            coalesce(likes_subquery.c.likes, 0).label('likes_count'),
+            coalesce(likes_subquery.c.dislikes, 0).label('dislikes_count')
+        )
+        .outerjoin(likes_subquery, models.Video.id == likes_subquery.c.video_id)
+        .options(joinedload(models.Video.author))
+        .order_by(models.Video.created_at.desc())
+    )
 
+    # Получаем данные в виде кортежей (Video, likes_count, dislikes_count)
+    videos_data = video_query.all()
+
+    # Создаем список видео с динамическими атрибутами
+    processed_videos = []
+    for video, likes, dislikes in videos_data:
+        # Динамически добавляем атрибуты к объекту
+        video = copy.copy(video)  # Создаем поверхностную копию чтобы не менять оригинальный объект
+        video.likes_count = likes
+        video.dislikes_count = dislikes
+        processed_videos.append(video)
 
     return templates.TemplateResponse(
         "main.html",
         {
             "request": request,
-            "user": user,  # Будет None если пользователь не авторизован
-            "videos": videos
+            "user": user,
+            "videos": processed_videos
         }
     )
 
