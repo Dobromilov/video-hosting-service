@@ -1,4 +1,5 @@
 from sqlalchemy import create_engine, Column, Integer, String, Text, TIMESTAMP, ForeignKey, Boolean, UniqueConstraint
+from sqlalchemy import DateTime
 from sqlalchemy import CheckConstraint
 from sqlalchemy.sql import func
 from sqlalchemy.orm import declarative_base, relationship
@@ -22,26 +23,29 @@ class User(Base):
 
     videos = relationship("Video", back_populates="author")
     comments = relationship("Comment", back_populates="user")
+
 class Video(Base):
     __tablename__ = "videos"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     title = Column(String(255), nullable=False)
     description = Column(Text)
     filepath = Column(String(255), nullable=False)
     thumbnail = Column(String(255))
-    views = Column(Integer, nullable=False, server_default="0")
-    created_at = Column(TIMESTAMP, server_default=func.now(), nullable=False)
-    duration = Column(Integer)  # Длительность в секундах
-    privacy = Column(String(10), server_default="public")  # public или private
+    views = Column(Integer, server_default="0", nullable=False)
+    duration = Column(Integer)
+    privacy = Column(String(10), server_default="public")
+    created_at = Column(DateTime, server_default=func.now())
+
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+
     __table_args__ = (
         CheckConstraint("privacy IN ('public', 'private')", name='check_privacy'),
     )
 
     author = relationship("User", back_populates="videos")
-    comments = relationship("Comment", back_populates="video")  # Это было пропущено
-
+    comments = relationship("Comment", back_populates="video")
+    likes = relationship("Like", back_populates="video")
 
 class Comment(Base):
     __tablename__ = "comments"
@@ -73,6 +77,8 @@ class Like(Base):
         CheckConstraint("is_like IN (TRUE, FALSE)", name='check_is_like_bool'),
     )
 
+    video = relationship("Video", back_populates="likes")
+
 class Subscription(Base):
     __tablename__ = "subscriptions"
 
@@ -96,6 +102,5 @@ class CommentLike(Base):
     created_at = Column(TIMESTAMP, server_default=func.now())
 
     __table_args__ = (
-        # Один пользователь — одна реакция на комментарий
         UniqueConstraint('user_id', 'comment_id', name='unique_comment_like'),
     )

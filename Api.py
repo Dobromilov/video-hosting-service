@@ -1,14 +1,24 @@
 import shutil
-from typing import Optional
-from fastapi import Depends, HTTPException, status, APIRouter, Request, Response, Form, UploadFile, File
+from tinytag import TinyTag
+import subprocess
+from typing import Optional, List
+from fastapi import Depends, HTTPException, status, APIRouter, Request, Response, Form, UploadFile, File, Query
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
-from datetime import timedelta
+from datetime import timedelta, datetime
 from passlib.context import CryptContext
-from sqlalchemy.orm import Session
+from sqlalchemy import func
+from sqlalchemy.orm import Session, joinedload
 import time
 import os
+from fastapi import APIRouter
+from starlette import schemas
+
+from models import Video
+#from tortoise.contrib.pydantic import pydantic_model_creator
+from typing import List
+
 
 
 
@@ -45,7 +55,6 @@ async def check_username(username: str, db: Session = Depends(get_db)):
 
     user = db.query(models.User).filter(models.User.username == username).first()
     return {"exists": user is not None}
-
 
 
 
@@ -167,6 +176,242 @@ async def change_password(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Ошибка при обновлении пароля: {str(e)}"
+        )
+
+@router.post("/upload-video")
+async def upload_video(
+    title: str = Form(...),
+    description: str = Form(None),
+    video_file: UploadFile = File(...),
+    thumbnail: UploadFile = File(None),
+    user: User = Depends(get_current_user_optional),
+    db: Session = Depends(get_db)
+):
+    try:
+        # Создание папок
+        os.makedirs("static/videos", exist_ok=True)
+        os.makedirs("static/thumbnails", exist_ok=True)
+
+
+        # Сохранение видео
+        video_filename = f"video_{user.id}_{int(time.time())}.mp4"
+        video_path = f"static/videos/{video_filename}"
+        with open(video_path, "wb") as buffer:
+            shutil.copyfileobj(video_file.file, buffer)
+
+        duration = 0
+        try:
+            tag = TinyTag.get(video_path)
+            duration = int(tag.duration)
+        except Exception as e:
+            print(f"Error getting duration: {str(e)}")
+        finally:
+            video_file.file.seek(0)  # Важно: возвращаем указатель в начало
+
+        # Сохранение обложки
+        thumbnail_filename = "default-thumbnail.jpg"
+        if thumbnail and thumbnail.content_type.startswith('image/'):
+            thumbnail_ext = os.path.splitext(thumbnail.filename)[1].lower()
+            thumbnail_filename = f"thumb_{user.id}_{int(time.time())}{thumbnail_ext}"
+            thumbnail_path = os.path.join("static/thumbnails", thumbnail_filename)
+
+            with open(thumbnail_path, "wb") as buffer:
+                shutil.copyfileobj(thumbnail.file, buffer)
+
+        # Создание записи в БД
+        new_video = models.Video(
+            title=title,
+            description=description,
+            filepath=video_filename,
+            thumbnail=thumbnail_filename,
+            user_id=user.id,
+            created_at=datetime.now(),
+            duration=duration
+        )
+        db.add(new_video)
+        db.commit()
+
+        return {"status": "success"}
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class CommentCreate(BaseModel):
+    content: str
+    video_id: int
+    parent_comment_id: Optional[int] = None
+
+
+@router.post("/add-comment")
+async def add_comment(
+        comment_data: CommentCreate,
+        user: User = Depends(get_current_user_optional),
+        db: Session = Depends(get_db)
+):
+    if not user:
+        raise HTTPException(status_code=401, detail="Требуется авторизация")
+
+    new_comment = models.Comment(
+     content=comment_data.content,
+        video_id=comment_data.video_id,
+        user_id=user.id,
+        created_at=datetime.now(),
+        parent_comment_id=comment_data.parent_comment_id
+    )
+
+    db.add(new_comment)
+    db.commit()
+
+    return {"status": "success"}
+
+async def get_user_videos(user_id: int, db: Session) -> List[models.Video]:
+    videos = db.query(models.Video).filter(models.Video.user_id == user_id).all()
+    return videos
+
+
+class CommentLikeDislike(BaseModel):
+    comment_id: int
+    is_like: bool
+
+class CommentReactionResponse(BaseModel):
+    action: str  # created, updated, removed
+    likes: int
+    dislikes: int
+    is_like: Optional[bool]
+
+
+@router.post("/toggle-comment-like")
+async def set_comment_like_dislike(
+        reaction_data: CommentLikeDislike,
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(get_current_user_optional)
+):
+    try:
+        # Проверка существования комментария
+        comment = db.query(models.Comment).get(reaction_data.comment_id)
+        if not comment:
+            raise HTTPException(status_code=404, detail="Comment not found")
+
+        # Поиск существующей реакции
+        existing_reaction = db.query(models.CommentLike).filter(
+            models.CommentLike.user_id == current_user.id,
+            models.CommentLike.comment_id == reaction_data.comment_id
+        ).first()
+
+        action = "removed"
+        if existing_reaction:
+            # Если реакция совпадает - удаляем
+            if existing_reaction.is_like == reaction_data.is_like:
+                db.delete(existing_reaction)
+            else:
+                # Изменяем тип реакции
+                existing_reaction.is_like = reaction_data.is_like
+                action = "updated"
+        else:
+            # Создаем новую реакцию
+            new_reaction = models.CommentLike(
+                user_id=current_user.id,
+                comment_id=reaction_data.comment_id,
+                is_like=reaction_data.is_like
+            )
+            db.add(new_reaction)
+            action = "created"
+
+        db.commit()
+
+        # Получаем актуальные счетчики
+        likes_count = db.query(func.count(models.CommentLike.id)).filter(
+            models.CommentLike.comment_id == reaction_data.comment_id,
+            models.CommentLike.is_like == True
+        ).scalar()
+
+        dislikes_count = db.query(func.count(models.CommentLike.id)).filter(
+            models.CommentLike.comment_id == reaction_data.comment_id,
+            models.CommentLike.is_like == False
+        ).scalar()
+
+        return {
+            "action": action,
+            "likes": likes_count,
+            "dislikes": dislikes_count,
+            "is_like": reaction_data.is_like if action != "removed" else None
+        }
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(e)}"
+        )
+
+class VideoLikeDislike(BaseModel):
+    video_id: int
+    is_like: bool
+
+@router.post("/toggle-video-like")
+async def toggle_video_like(
+    reaction_data: VideoLikeDislike,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user_optional)
+):
+    try:
+        # Проверка существования видео
+        video = db.query(models.Video).get(reaction_data.video_id)
+        if not video:
+            raise HTTPException(status_code=404, detail="Video not found")
+
+        # Поиск существующей реакции
+        existing_reaction = db.query(models.Like).filter(
+            models.Like.user_id == current_user.id,
+            models.Like.video_id == reaction_data.video_id
+        ).first()
+
+        action = "removed"
+        if existing_reaction:
+            # Если реакция совпадает - удаляем
+            if existing_reaction.is_like == reaction_data.is_like:
+                db.delete(existing_reaction)
+            else:
+                # Изменяем тип реакции
+                existing_reaction.is_like = reaction_data.is_like
+                action = "updated"
+        else:
+            # Создаем новую реакцию
+            new_reaction = models.Like(
+                user_id=current_user.id,
+                video_id=reaction_data.video_id,
+                is_like=reaction_data.is_like
+            )
+            db.add(new_reaction)
+            action = "created"
+
+        db.commit()
+
+        # Получаем актуальные счетчики
+        likes_count = db.query(func.count(models.Like.id)).filter(
+            models.Like.video_id == reaction_data.video_id,
+            models.Like.is_like == True
+        ).scalar()
+
+        dislikes_count = db.query(func.count(models.Like.id)).filter(
+            models.Like.video_id == reaction_data.video_id,
+            models.Like.is_like == False
+        ).scalar()
+
+        return {
+            "action": action,
+            "likes": likes_count,
+            "dislikes": dislikes_count,
+            "is_like": reaction_data.is_like if action != "removed" else None
+        }
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(e)}"
         )
 
 

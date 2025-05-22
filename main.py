@@ -1,10 +1,15 @@
+import copy
+from datetime import datetime
+
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import func, case
+from sqlalchemy.sql.functions import coalesce
 from starlette import status
 from typing import Annotated, Optional
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 import models
 import Auth
 from Auth import get_current_user, get_current_active_user
@@ -31,18 +36,57 @@ def get_db():
 db_dependency = Annotated[Session, Depends(get_db)]
 user_dependency = Annotated[models.User, Depends(get_current_active_user)]
 
+
 @app.get("/", response_class=HTMLResponse)
 async def home_page(
     request: Request,
+    db: Session = Depends(get_db),
     user: Optional[models.User] = Depends(Auth.get_current_user_optional)
 ):
     if not user:
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+
+    # Подзапрос для счетчиков реакций
+    likes_subquery = (
+        db.query(
+            models.Like.video_id,
+            func.sum(case((models.Like.is_like == True, 1), else_=0)).label('likes'),
+            func.sum(case((models.Like.is_like == False, 1), else_=0)).label('dislikes')
+        )
+        .group_by(models.Like.video_id)
+        .subquery()
+    )
+
+    # Основной запрос с явным выбором полей
+    video_query = (
+        db.query(
+            models.Video,
+            coalesce(likes_subquery.c.likes, 0).label('likes_count'),
+            coalesce(likes_subquery.c.dislikes, 0).label('dislikes_count')
+        )
+        .outerjoin(likes_subquery, models.Video.id == likes_subquery.c.video_id)
+        .options(joinedload(models.Video.author))
+        .order_by(models.Video.created_at.desc())
+    )
+
+    # Получаем данные в виде кортежей (Video, likes_count, dislikes_count)
+    videos_data = video_query.all()
+
+    # Создаем список видео с динамическими атрибутами
+    processed_videos = []
+    for video, likes, dislikes in videos_data:
+        # Динамически добавляем атрибуты к объекту
+        video = copy.copy(video)  # Создаем поверхностную копию чтобы не менять оригинальный объект
+        video.likes_count = likes
+        video.dislikes_count = dislikes
+        processed_videos.append(video)
+
     return templates.TemplateResponse(
         "main.html",
         {
             "request": request,
-            "user": user,  # Будет None если пользователь не авторизован
+            "user": user,
+            "videos": processed_videos
         }
     )
 
@@ -62,15 +106,136 @@ async def register_page(request: Request,
     return templates.TemplateResponse("register.html", {"request": request})
 
 @app.get("/profile", response_class=HTMLResponse)
-async def profile_page(request: Request, user: user_dependency):
+async def profile_page(request: Request, user: user_dependency, db: db_dependency):
     if user:
+        videos = await Api.get_user_videos(user.id, db)
         return templates.TemplateResponse(
             "profile.html",
-            {"request": request, "user": user}
+            {"request": request, "user": user, "user_videos": videos}
         )
     else:
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
 
+@app.get("/video/{video_id}", response_class=HTMLResponse)
+async def video_page(
+        request: Request,
+        video_id: int,
+        db: Session = Depends(get_db),
+        user: Optional[models.User] = Depends(Auth.get_current_user_optional)
+):
+    if not user:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+
+    # Получаем видео с автором
+    video = db.query(models.Video) \
+        .options(joinedload(models.Video.author)) \
+        .filter(models.Video.id == video_id) \
+        .first()
+
+    if not video:
+        raise HTTPException(status_code=404, detail="Видео не найдено")
+
+    video_likes = db.query(func.count(models.Like.id)) \
+                      .filter(models.Like.video_id == video_id, models.Like.is_like == True) \
+                      .scalar() or 0
+
+    video_dislikes = db.query(func.count(models.Like.id)) \
+                         .filter(models.Like.video_id == video_id, models.Like.is_like == False) \
+                         .scalar() or 0
+
+    user_video_reaction = None
+    reaction = db.query(models.Like) \
+        .filter(models.Like.video_id == video_id, models.Like.user_id == user.id) \
+        .first()
+    user_video_reaction = reaction.is_like if reaction else None
+
+    # Создаем подзапросы для подсчета лайков и дизлайков
+    likes_subquery = (
+        db.query(
+            models.CommentLike.comment_id,
+            func.count(models.CommentLike.id).filter(models.CommentLike.is_like == True).label('likes_count'),
+            func.count(models.CommentLike.id).filter(models.CommentLike.is_like == False).label('dislikes_count')
+        )
+        .group_by(models.CommentLike.comment_id)
+        .subquery()
+    )
+
+    # Получаем комментарии с пользователями и реакциями
+    comments_query = db.query(
+        models.Comment,
+        coalesce(likes_subquery.c.likes_count, 0).label('likes_count'),
+        coalesce(likes_subquery.c.dislikes_count, 0).label('dislikes_count')
+    ) \
+        .outerjoin(likes_subquery, models.Comment.id == likes_subquery.c.comment_id) \
+        .options(joinedload(models.Comment.user)) \
+        .filter(models.Comment.video_id == video_id) \
+        .order_by(models.Comment.created_at.desc())
+
+    # Получаем все комментарии с счетчиками
+    all_comments = comments_query.all()
+
+    # Разделяем результаты запроса
+    comments_with_counts = []
+    for comment, likes, dislikes in all_comments:
+        comment.likes_count = likes or 0
+        comment.dislikes_count = dislikes or 0
+        comments_with_counts.append(comment)
+
+    # Собираем ID комментариев и реакции пользователя
+    comment_ids = [c.id for c in comments_with_counts]
+    user_reactions = {}
+
+    if user:
+        reactions = db.query(models.CommentLike) \
+            .filter(
+            models.CommentLike.comment_id.in_(comment_ids),
+            models.CommentLike.user_id == user.id
+        ) \
+            .all()
+        user_reactions = {r.comment_id: r.is_like for r in reactions}
+
+    # Формируем древовидную структуру комментариев
+    def build_comment_tree(comments, parent_id=None):
+        result = []
+        for comment in comments:
+            if comment.parent_comment_id == parent_id:
+                # Устанавливаем пользовательскую реакцию
+                comment.user_reaction = user_reactions.get(comment.id)
+                # Рекурсивно получаем ответы
+                comment.replies = build_comment_tree(comments, comment.id)
+                result.append(comment)
+        return result
+
+    # Строим иерархию комментариев
+    comments_tree = build_comment_tree(comments_with_counts)
+
+    # Обновляем счетчик просмотров
+    db.query(models.Video) \
+        .filter(models.Video.id == video_id) \
+        .update({models.Video.views: models.Video.views + 1})
+    db.commit()
+
+    return templates.TemplateResponse(
+        "video.html",
+        {
+            "request": request,
+            "video": video,
+            "author": video.author,
+            "comments": comments_tree,
+            "user": user,
+            "video_likes": video_likes,
+            "video_dislikes": video_dislikes,
+            "user_video_reaction": user_video_reaction
+        }
+    )
+
+def format_date(value, format_str="%d.%m.%Y"):
+    if isinstance(value, datetime):
+        return value.strftime(format_str)
+    return value
+
+templates = Jinja2Templates(directory="templates")
+templates.env.filters["date"] = format_date
 
 if __name__ == "__main__":
     import uvicorn
